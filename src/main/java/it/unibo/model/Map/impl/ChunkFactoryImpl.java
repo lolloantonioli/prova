@@ -2,6 +2,9 @@ package it.unibo.model.Map.impl;
 
 import java.util.Random;
 
+import it.unibo.model.Map.Obstacles.api.MovingObstacleFactory;
+import it.unibo.model.Map.Obstacles.impl.MovingObstacleFactoryImpl;
+import it.unibo.model.Map.Obstacles.impl.MovingObstacles;
 import it.unibo.model.Map.api.Chunk;
 import it.unibo.model.Map.api.ChunkFactory;
 import it.unibo.model.Map.api.Collectible;
@@ -19,6 +22,7 @@ public class ChunkFactoryImpl implements ChunkFactory {
     //private static final int CHUNK_WIDTH = 400;
     //private static final int CHUNK_HEIGHT = 120;
     private static final int MIN_FREE_PATH_WIDTH = 80; // Larghezza minima del percorso libero
+    private final MovingObstacleFactory obstacleFactory;
     
     /**
      * Constructor for the ChunkFactory class.
@@ -26,8 +30,10 @@ public class ChunkFactoryImpl implements ChunkFactory {
     public ChunkFactoryImpl() {
         this.random = new Random();
         this.pathValidator = new PathValidatorImpl(MIN_FREE_PATH_WIDTH);
+        this.obstacleFactory = new MovingObstacleFactoryImpl();
     }
     
+    @Override
     public Chunk createRandomChunk(int position, int width) {
         int type = random.nextInt(4);
         Chunk chunk = switch (type) {
@@ -43,8 +49,28 @@ public class ChunkFactoryImpl implements ChunkFactory {
         return chunk;
     }
     
+    @Override
     public Chunk createRoadChunk(int position, int width) {
         Chunk chunk = new ChunkImpl(position, width, ChunkType.ROAD);
+        
+        // Determina la direzione delle auto
+        boolean leftToRight = random.nextBoolean();
+        
+        // Crea le auto con la factory
+        int carCount = 2 + random.nextInt(3); // 2-4 auto
+        int minDistance = 100; // Distanza minima tra auto
+        MovingObstacles[] cars = obstacleFactory.createCarSet(
+            position + ChunkImpl.STANDARD_HEIGHT / 2, // Y centrato nel chunk
+            width,
+            carCount,
+            minDistance,
+            leftToRight
+        );
+        
+        // Aggiungi le auto al chunk come GameObject
+        for (MovingObstacles car : cars) {
+            chunk.addObject(car);
+        }
         
         // Randomly add a coin (30% chance)
         if (random.nextInt(10) < 3) {
@@ -59,8 +85,28 @@ public class ChunkFactoryImpl implements ChunkFactory {
         return chunk;
     }
     
+    @Override
     public Chunk createRailwayChunk(int position, int width) {
         Chunk chunk = new ChunkImpl(position, width, ChunkType.RAILWAY);
+        
+        // Determina la direzione dei treni
+        boolean leftToRight = random.nextBoolean();
+        
+        // Crea i treni con la factory
+        int trainCount = 1 + random.nextInt(2); // 1-2 treni (sono più grandi)
+        int minDistance = 300; // Distanza minima tra treni
+        MovingObstacles[] trains = obstacleFactory.createTrainSet(
+            position + ChunkImpl.STANDARD_HEIGHT / 2, // Y centrato nel chunk
+            width,
+            trainCount,
+            minDistance,
+            leftToRight
+        );
+        
+        // Aggiungi i treni al chunk come GameObject
+        for (MovingObstacles train : trains) {
+            chunk.addObject(train);
+        }
         
         // Rarely add a power-up (10% chance)
         if (random.nextInt(10) < 1) {
@@ -78,6 +124,7 @@ public class ChunkFactoryImpl implements ChunkFactory {
         return chunk;
     }
     
+    @Override
     public Chunk createRiverChunk(int position, int width) {
         Chunk chunk = new ChunkImpl(position, width, ChunkType.RIVER);
         
@@ -139,6 +186,7 @@ public class ChunkFactoryImpl implements ChunkFactory {
         return chunk;
     }
     
+    @Override
     public Chunk createGrassChunk(int position, int width) {
         Chunk chunk = new ChunkImpl(position, width, ChunkType.GRASS);
         
