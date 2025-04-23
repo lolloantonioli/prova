@@ -14,10 +14,10 @@ public class MovingObstacleFactoryImpl implements MovingObstacleFactory {
     private final Random random;
     
     // Costanti per i limiti di velocità
-    private static final int MIN_CAR_SPEED = 1;
-    private static final int MAX_CAR_SPEED = 3;
-    private static final int MIN_TRAIN_SPEED = 2;
-    private static final int MAX_TRAIN_SPEED = 5;
+    public static final int MIN_CAR_SPEED = 1;
+    public static final int MAX_CAR_SPEED = 3;
+    public static final int MIN_TRAIN_SPEED = 2;
+    public static final int MAX_TRAIN_SPEED = 5;
     
     public MovingObstacleFactoryImpl() {
         this.random = new Random();
