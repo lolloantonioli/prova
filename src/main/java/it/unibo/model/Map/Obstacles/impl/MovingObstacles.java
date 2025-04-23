@@ -11,6 +11,7 @@ public class MovingObstacles implements Obstacle{
     private boolean movable;
     private boolean visible;
     private int initialX; // per far ricomparire l'ostacolo nella posizione iniziale
+    private int initialSpeed;
 
     public MovingObstacles(int x, int y, ObstacleType type, int speed) {
         this.x = x;
@@ -18,6 +19,7 @@ public class MovingObstacles implements Obstacle{
         this.y = y;
         this.type = type;
         this.speed = speed;
+        this.initialSpeed = speed;
         this.movable = true;
         this.visible = true;
     }
@@ -58,6 +60,7 @@ public class MovingObstacles implements Obstacle{
      */
     public void reset() {
         this.x = initialX;
+        this.speed = initialSpeed;
     }
 
     /**

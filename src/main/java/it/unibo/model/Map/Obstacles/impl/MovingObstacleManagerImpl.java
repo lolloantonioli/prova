@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import it.unibo.model.Map.Obstacles.api.MovingObstacleManager;
@@ -142,5 +143,27 @@ public class MovingObstacleManagerImpl implements MovingObstacleManager {
     @Override
     public int getObstacleCount() {
         return obstacles.size();
+    }
+    
+    @Override
+    public void resetAll() {
+        for (MovingObstacles obstacle : obstacles) {
+            obstacle.reset();
+        
+            // Ripristina anche la velocità originale se è stata modificata
+            // Potremmo mantenere una mappa delle velocità iniziali o aggiungere 
+            // un campo initialSpeed a MovingObstacles
+            if (obstacle.getType() == ObstacleType.CAR) {
+                int direction = Integer.signum(obstacle.getSpeed());
+                obstacle.setSpeed(direction * (MovingObstacleFactoryImpl.MIN_CAR_SPEED + 
+                              new Random().nextInt(MovingObstacleFactoryImpl.MAX_CAR_SPEED - 
+                              MovingObstacleFactoryImpl.MIN_CAR_SPEED + 1)));
+            } else if (obstacle.getType() == ObstacleType.TRAIN) {
+                int direction = Integer.signum(obstacle.getSpeed());
+                obstacle.setSpeed(direction * (MovingObstacleFactoryImpl.MIN_TRAIN_SPEED + 
+                              new Random().nextInt(MovingObstacleFactoryImpl.MAX_TRAIN_SPEED - 
+                              MovingObstacleFactoryImpl.MIN_TRAIN_SPEED + 1)));
+        }
+    }
     }
 }

@@ -84,4 +84,9 @@ public interface MovingObstacleManager {
      * @return Count of obstacles
      */
     int getObstacleCount();
+
+    /**
+    * Resets all obstacles to their initial position and state.
+    */
+    void resetAll();
 }
