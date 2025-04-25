@@ -7,7 +7,7 @@ public class GameObjectImpl implements GameObject {
     
     private final Dimension dimension;
     private int x;
-    private final int y;
+    private int y;
     private boolean movable;
     private int speed;
     private boolean platform;
