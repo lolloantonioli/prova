@@ -40,7 +40,7 @@ public interface GameMap {
      * @param y Y-coordinate
      * @return True if the position is out of bounds
      */
-    boolean isPositionOutOfBounds(int x, int y);
+    boolean isPositionOutOfBounds(final int x, final int y);
 
     /**
      * Gets the total list of chunks.

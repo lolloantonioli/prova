@@ -7,7 +7,7 @@ public interface GameObject {
      * 
      * @param mapWidth Width of the map to handle wrapping
      */
-    void update(int mapWidth);
+    void update(final int mapWidth);
 
     /**
      * Checks if this game object collides with a point.
@@ -16,7 +16,7 @@ public interface GameObject {
      * @param py Y-coordinate of the point
      * @return True if there is a collision
      */
-    boolean collidesWith(int px, int py);
+    boolean collidesWith(final int px, final int py);
 
     /**
      * Gets the X-coordinate.
@@ -58,7 +58,7 @@ public interface GameObject {
      * 
      * @param movable True if the object should be movable
      */
-    void setMovable(boolean movable);
+    void setMovable(final boolean movable);
 
     /**
      * Gets the speed of the object.
@@ -72,7 +72,7 @@ public interface GameObject {
      * 
      * @param speed New speed
      */
-    void setSpeed(int speed);
+    void setSpeed(final int speed);
 
     /**
      * Checks if the object is a platform the player can stand on.
@@ -86,6 +86,8 @@ public interface GameObject {
      * 
      * @param platform True if the object should be a platform
      */
-    void setPlatform(boolean platform);
+    void setPlatform(final boolean platform);
+
+    void setPosition(final int newX, final int newY);
 
 }

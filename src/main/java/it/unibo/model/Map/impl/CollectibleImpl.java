@@ -15,7 +15,7 @@ public class CollectibleImpl extends GameObjectImpl implements Collectible {
      * @param y Y-coordinate
      * @param type Type of collectible
      */
-    public CollectibleImpl(int x, int y, CollectibleType type) {
+    public CollectibleImpl(final int x, final int y, final CollectibleType type) {
         // Standard size for collectibles
         super(x, y, 20, 20);
         this.type = type;

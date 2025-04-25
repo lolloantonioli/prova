@@ -5,13 +5,32 @@ import java.util.List;
 import it.unibo.model.Map.util.ChunkType;
 
 public interface Chunk {
+    
+    /**
+     * Aggiunge un oggetto a una cella specifica.
+     * 
+     * @param obj Oggetto da aggiungere
+     * @param cellX Posizione X della cella (indice)
+     * @return true se l'oggetto è stato aggiunto, false altrimenti
+     */
+    boolean addObjectAt(final GameObject obj, final int cellX);
 
     /**
-     * Adds a game object to the chunk.
+     * Aggiunge un oggetto alla prima cella libera.
      * 
-     * @param obj Game object to add
+     * @param obj Oggetto da aggiungere
+     * @return true se l'oggetto è stato aggiunto, false altrimenti
      */
-    void addObject(GameObject obj);
+    boolean addObject(final GameObject obj);
+    
+    /**
+     * Checks if the chunk is visible within the current viewport.
+     * 
+     * @param viewPosition Current view position
+     * @param viewHeight Height of the viewport
+     * @return True if the chunk is visible
+     */
+    boolean isVisible(final int viewPosition, final int viewHeight);
 
     /**
      * Gets the list of game objects in the chunk.
@@ -48,13 +67,12 @@ public interface Chunk {
     */
     int getWidth();
 
-    /**
-     * Checks if the chunk is visible within the current viewport.
-     * 
-     * @param viewPosition Current view position
-     * @param viewHeight Height of the viewport
-     * @return True if the chunk is visible
-     */
-    boolean isVisible(int viewPosition, int viewHeight);
+    List<Cell> getCells();
+
+    Cell getCellAt(final int x, final int y);
+
+    int getCellSize();
+
+    int getCellsPerRow();
 
 }

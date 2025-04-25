@@ -9,7 +9,7 @@ public interface ChunkFactory {
      * @param width Width of the chunk
      * @return A randomly generated chunk
      */
-    Chunk createRandomChunk(int position, int width);
+    Chunk createRandomChunk(final int position, final int width);
 
     /**
      * Creates a road chunk with cars.
@@ -18,7 +18,7 @@ public interface ChunkFactory {
      * @param width Width of the chunk
      * @return A road chunk
      */
-    Chunk createRoadChunk(int position, int width);
+    Chunk createRoadChunk(final int position, final int width);
 
     /**
      * Creates a railway chunk with trains.
@@ -27,7 +27,7 @@ public interface ChunkFactory {
      * @param width Width of the chunk
      * @return A railway chunk
      */
-    Chunk createRailwayChunk(int position, int width);
+    Chunk createRailwayChunk(final int position, final int width);
 
     /**
      * Creates a river chunk with water obstacles.
@@ -36,7 +36,7 @@ public interface ChunkFactory {
      * @param width Width of the chunk
      * @return A river chunk
      */
-    Chunk createRiverChunk(int position, int width);
+    Chunk createRiverChunk(final int position, final int width);
 
     /**
      * Creates a grass chunk with tree obstacles.
@@ -45,6 +45,6 @@ public interface ChunkFactory {
      * @param width Width of the chunk
      * @return A grass chunk
      */
-    Chunk createGrassChunk(int position, int width);
+    Chunk createGrassChunk(final int position, final int width);
 
 }

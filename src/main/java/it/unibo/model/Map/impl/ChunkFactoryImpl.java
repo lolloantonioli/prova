@@ -1,12 +1,16 @@
 package it.unibo.model.Map.impl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import it.unibo.model.Map.api.Chunk;
 import it.unibo.model.Map.api.ChunkFactory;
+import it.unibo.model.Map.api.ObjectPlacer;
 import it.unibo.model.Map.api.Collectible;
 import it.unibo.model.Map.api.GameObject;
-import it.unibo.model.Map.api.Obstacle;
 import it.unibo.model.Map.api.PathValidator;
 import it.unibo.model.Map.util.ChunkType;
 import it.unibo.model.Map.util.CollectibleType;
@@ -16,19 +20,24 @@ public class ChunkFactoryImpl implements ChunkFactory {
     
     private final Random random;
     private final PathValidator pathValidator;
-    //private static final int CHUNK_WIDTH = 400;
-    //private static final int CHUNK_HEIGHT = 120;
+    private final ObjectPlacer objectPlacer;
+    private final int cellSize;
+
     private static final int MIN_FREE_PATH_WIDTH = 80; // Larghezza minima del percorso libero
+    private static final int MAX_OBSTACLES_PER_CHUNK = 5;
+    private static final int MAX_COLLECTIBLES_PER_CHUNK = 3;
     
     /**
      * Constructor for the ChunkFactory class.
      */
-    public ChunkFactoryImpl() {
+    public ChunkFactoryImpl(final int cellSize) {
         this.random = new Random();
         this.pathValidator = new PathValidatorImpl(MIN_FREE_PATH_WIDTH);
+        this.objectPlacer = new ObjectPlacerImpl();
+        this.cellSize = cellSize;
     }
     
-    public Chunk createRandomChunk(int position, int width) {
+    public Chunk createRandomChunk(final int position, final int width) {
         int type = random.nextInt(4);
         Chunk chunk = switch (type) {
             case 0 -> createRoadChunk(position, width);
@@ -43,133 +52,107 @@ public class ChunkFactoryImpl implements ChunkFactory {
         return chunk;
     }
     
-    public Chunk createRoadChunk(int position, int width) {
-        Chunk chunk = new ChunkImpl(position, width, ChunkType.ROAD);
+    public Chunk createRoadChunk(final int position, final int width) {
+        Chunk chunk = new ChunkImpl(position, width, ChunkType.ROAD, cellSize);
         
-        // Randomly add a coin (30% chance)
-        if (random.nextInt(10) < 3) {
-            Collectible coin = new CollectibleImpl(
-                random.nextInt(width), 
-                position + random.nextInt(ChunkImpl.STANDARD_HEIGHT), 
-                CollectibleType.COIN
-            );
-            chunk.addObject(coin);
-        }
+        // Aggiungi collezionabili (monete e power-up)
+        List<Collectible> collectibles = generateCollectibles(width, position);
+        objectPlacer.placeObjectsRandomly(chunk, collectibles, MAX_COLLECTIBLES_PER_CHUNK);
         
         return chunk;
     }
     
-    public Chunk createRailwayChunk(int position, int width) {
-        Chunk chunk = new ChunkImpl(position, width, ChunkType.RAILWAY);
-        
-        // Rarely add a power-up (10% chance)
-        if (random.nextInt(10) < 1) {
-            CollectibleType[] powerUps = {
-                CollectibleType.INVINCIBILITY
-            };
-            Collectible powerUp = new CollectibleImpl(
-                random.nextInt(width), 
-                position + random.nextInt(ChunkImpl.STANDARD_HEIGHT), 
-                powerUps[random.nextInt(powerUps.length)]
-            );
-            chunk.addObject(powerUp);
-        }
+    public Chunk createRailwayChunk(final int position, final int width) {
+        Chunk chunk = new ChunkImpl(position, width, ChunkType.RAILWAY, cellSize);
+
+        // Aggiungi collezionabili (monete e power-up)
+        List<Collectible> collectibles = generateCollectibles(width, position);
+        objectPlacer.placeObjectsRandomly(chunk, collectibles, MAX_COLLECTIBLES_PER_CHUNK);
         
         return chunk;
     }
     
-    public Chunk createRiverChunk(int position, int width) {
-        Chunk chunk = new ChunkImpl(position, width, ChunkType.RIVER);
+    public Chunk createRiverChunk(final int position, final int width) {
+        Chunk chunk = new ChunkImpl(position, width, ChunkType.RIVER, cellSize);
         
-        // Add water as a continuous obstacle
-        Obstacle water = new ObstacleImpl(
-            0, 
-            position, 
-            width, 
-            ChunkImpl.STANDARD_HEIGHT, 
-            ObstacleType.WATER, 
-            false
-        );
-        chunk.addObject(water);
+        // Genera tronchi come piattaforme
+        List<GameObject> platforms = generateRiverPlatforms(width, position);
         
-        // Add log platforms (2-4)
-        int logCount = 2 + random.nextInt(3);
-        boolean rightToLeft = random.nextBoolean();
-        int speed = 1 + random.nextInt(2); // Logs are slow: 1-2
+        // Posiziona le piattaforme
+        objectPlacer.placeObjectsRandomly(chunk, platforms, MAX_OBSTACLES_PER_CHUNK);
         
-        for (int i = 0; i < logCount; i++) {
-            int logX = random.nextInt(width);
-            int logWidth = 80 + random.nextInt(40); // Logs of varying sizes
-            int logHeight = 30;
-            
-            // Logs are safe platforms, not obstacles
-            GameObjectImpl log = new GameObjectImpl(
-                logX, 
-                position + (ChunkImpl.STANDARD_HEIGHT / (logCount + 1)) * (i + 1) - logHeight / 2, 
-                logWidth, 
-                logHeight
-            );
-            log.setMovable(true);
-            log.setSpeed(rightToLeft ? -speed : speed);
-            log.setPlatform(true); // Logs are platforms player can stand on
-            chunk.addObject(log);
-        }
+        // Aggiungi collezionabili (monete e power-up)
+        List<Collectible> collectibles = generateCollectibles(width, position);
+        objectPlacer.placeObjectsRandomly(chunk, collectibles, MAX_COLLECTIBLES_PER_CHUNK);
         
-        // Add a coin on one of the logs (50% chance)
-        if (random.nextBoolean() && !chunk.getObjects().isEmpty()) {
-            // Find a log to place the coin on
-            GameObject log = null;
-            for (var obj : chunk.getObjects()) {
-                if (obj.isPlatform()) {
-                    log = obj;
-                    break;
-                }
-            }
-            
-            if (log != null) {
-                Collectible coin = new CollectibleImpl(
-                    log.getX() + log.getWidth() / 2, 
-                    log.getY() - 15, // Just above the log
-                    CollectibleType.COIN
+        return chunk;
+    }
+    
+    
+    public Chunk createGrassChunk(final int position, final int width) {
+        Chunk chunk = new ChunkImpl(position, width, ChunkType.GRASS, cellSize);
+        
+        // Genera alberi come ostacoli
+        List<GameObject> grassObstacles = generateGrassObstacles(width, position);
+        
+        // Posiziona gli ostacoli
+        objectPlacer.placeObjectsRandomly(chunk, grassObstacles, MAX_OBSTACLES_PER_CHUNK);
+        
+        // Aggiungi collezionabili (monete e power-up)
+        List<Collectible> collectibles = generateCollectibles(width, position);
+        objectPlacer.placeObjectsRandomly(chunk, collectibles, MAX_COLLECTIBLES_PER_CHUNK);
+        
+        return chunk;
+    }
+    
+    private List<GameObject> generateRiverPlatforms(final int width, final int position) {
+        return IntStream.range(0, 2 + random.nextInt(3))
+            .mapToObj(i -> {
+                int logWidth = 80 + random.nextInt(40);
+                int logHeight = 30;
+                int speed = (random.nextBoolean() ? 1 : -1) * (1 + random.nextInt(2));
+
+                GameObjectImpl log = new GameObjectImpl(
+                    random.nextInt(width),
+                    position + random.nextInt(ChunkImpl.STANDARD_HEIGHT - logHeight),
+                    logWidth,
+                    logHeight
                 );
-                chunk.addObject(coin);
-            }
-        }
-        
-        return chunk;
+                log.setMovable(true);
+                log.setSpeed(speed);
+                log.setPlatform(true);
+                return log;
+            })
+            .collect(Collectors.toList());
     }
     
-    public Chunk createGrassChunk(int position, int width) {
-        Chunk chunk = new ChunkImpl(position, width, ChunkType.GRASS);
+    private List<GameObject> generateGrassObstacles(final int width, final int position) {
+        return IntStream.range(0, random.nextInt(6))
+            .mapToObj(i -> {
+                int treeSize = 30 + random.nextInt(20);
+                return new ObstacleImpl(
+                    random.nextInt(width),
+                    position + random.nextInt(ChunkImpl.STANDARD_HEIGHT - treeSize),
+                    treeSize,
+                    treeSize,
+                    ObstacleType.TREE,
+                    false
+                );
+            })
+            .collect(Collectors.toList());
+    }
+
+    private List<Collectible> generateCollectibles(final int width, final int position) {
+        int numCollectibles = random.nextInt(4); // 0-3 collezionabili
+        List<CollectibleType> types = new ArrayList<>(
+            List.of(CollectibleType.COIN, CollectibleType.COIN,CollectibleType.COIN, CollectibleType.INVINCIBILITY));
         
-        // Add 0-5 trees as obstacles
-        int treeCount = random.nextInt(6);
-        
-        for (int i = 0; i < treeCount; i++) {
-            int treeX = random.nextInt(width);
-            int treeSize = 30 + random.nextInt(20); // Trees of varying sizes
-            
-            Obstacle tree = new ObstacleImpl(
-                treeX, 
-                position + random.nextInt(ChunkImpl.STANDARD_HEIGHT - treeSize), 
-                treeSize, 
-                treeSize, 
-                ObstacleType.TREE, 
-                false
-            );
-            chunk.addObject(tree);
-        }
-        
-        // Higher chance for coins in grass (40%)
-        if (random.nextInt(10) < 4) {
-            Collectible coin = new CollectibleImpl(
-                random.nextInt(width), 
-                position + random.nextInt(ChunkImpl.STANDARD_HEIGHT), 
-                CollectibleType.COIN
-            );
-            chunk.addObject(coin);
-        }
-        
-        return chunk;
+        return IntStream.range(0, numCollectibles)
+            .mapToObj(i -> new CollectibleImpl(
+                random.nextInt(width),
+                position + random.nextInt(ChunkImpl.STANDARD_HEIGHT),
+                types.get(random.nextInt(types.size()))
+            ))
+            .collect(Collectors.toList());
     }
 }

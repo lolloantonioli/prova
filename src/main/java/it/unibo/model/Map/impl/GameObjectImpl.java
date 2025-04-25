@@ -69,6 +69,11 @@ public class GameObjectImpl implements GameObject {
     public void setMovable(boolean movable) {
         this.movable = movable;
     }
+
+    public void setPosition(int newX, int newY) {
+        this.x = newX;
+        this.y = newY;
+    }
     
     public int getSpeed() {
         return speed;

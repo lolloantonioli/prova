@@ -7,6 +7,7 @@ import it.unibo.model.Map.api.Chunk;
 import it.unibo.model.Map.api.Collectible;
 import it.unibo.model.Map.api.GameMap;
 import it.unibo.model.Map.api.Obstacle;
+import it.unibo.model.Map.impl.GameMapImpl;
 import it.unibo.model.Map.util.CollectibleType;
 import it.unibo.model.Map.util.ObstacleType;
 import it.unibo.view.Map.api.MapView;
@@ -145,6 +146,12 @@ public class MapControllerImpl implements MapController {
      * @param height The new height of the window
      */
     public void updateViewDimensions(int width, int height) {
+        // Aggiorna il modello
+        if (model instanceof GameMapImpl) {
+            ((GameMapImpl) model).updateViewportDimensions(width, height);
+        }
+    
+        // Aggiorna la vista
         if (view instanceof MapViewImpl) {
             ((MapViewImpl) view).updateDimensions(width, height);
         }

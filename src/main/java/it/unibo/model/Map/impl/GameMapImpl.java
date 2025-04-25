@@ -1,8 +1,8 @@
 package it.unibo.model.Map.impl;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import it.unibo.model.Map.api.Chunk;
 import it.unibo.model.Map.api.ChunkFactory;
@@ -11,9 +11,9 @@ import it.unibo.model.Map.api.GameMap;
 public class GameMapImpl implements GameMap {
 
     private final List<Chunk> chunks;
-    private final int viewportHeight;
-    private final int viewportWidth;
-    private final ChunkFactory chunkFactory;
+    private int viewportHeight;
+    private int viewportWidth;
+    private ChunkFactory chunkFactory;
     private int currentPosition;
     private int scrollSpeed;
     
@@ -21,7 +21,7 @@ public class GameMapImpl implements GameMap {
     private static final int BUFFER_CHUNKS = 5;
     
     /**
-     * Constructor for the Map class.
+     * Constructor for the GameMap.
      * 
      * @param width Width of the viewport
      * @param height Height of the viewport
@@ -33,7 +33,7 @@ public class GameMapImpl implements GameMap {
         this.scrollSpeed = speed;
         this.currentPosition = 0;
         this.chunks = new ArrayList<>();
-        this.chunkFactory = new ChunkFactoryImpl();
+        this.chunkFactory = new ChunkFactoryImpl(viewportWidth / 8); // esempio 8 celle
         
         // Initialize the map with starting chunks
         this.initializeMap();
@@ -67,14 +67,7 @@ public class GameMapImpl implements GameMap {
      * Removes chunks that are no longer visible and far behind.
      */
     private void cleanupChunks() {
-        Iterator<Chunk> iterator = chunks.iterator();
-        while (iterator.hasNext()) {
-            Chunk chunk = iterator.next();
-            // If chunk is far behind current position (out of viewport + margin)
-            if (chunk.getPosition() > currentPosition + viewportHeight) {
-                iterator.remove();
-            }
-        }
+        chunks.removeIf(chunk -> chunk.getPosition() > currentPosition + viewportHeight);
     }
     
     /**
@@ -96,13 +89,10 @@ public class GameMapImpl implements GameMap {
      * @return The position of the farthest chunk
      */
     private int getFarthestChunkPosition() {
-        int farthest = Integer.MAX_VALUE;
-        for (Chunk chunk : chunks) {
-            if (chunk.getPosition() < farthest) {
-                farthest = chunk.getPosition();
-            }
-        }
-        return farthest == Integer.MAX_VALUE ? 0 : farthest;
+        return chunks.stream()
+            .mapToInt(Chunk::getPosition)
+            .min()
+            .orElse(0);
     }
     
     public void generateNewChunk() {
@@ -118,13 +108,9 @@ public class GameMapImpl implements GameMap {
     }
     
     public List<Chunk> getVisibleChunks() {
-        List<Chunk> visibleChunks = new ArrayList<>();
-        for (Chunk chunk : chunks) {
-            if (chunk.isVisible(currentPosition, viewportHeight)) {
-                visibleChunks.add(chunk);
-            }
-        }
-        return visibleChunks;
+        return chunks.stream()
+            .filter(chunk -> chunk.isVisible(currentPosition, viewportHeight))
+            .collect(Collectors.toList());
     }
     
     public int getCurrentPosition() {
@@ -132,11 +118,16 @@ public class GameMapImpl implements GameMap {
     }
     
     public void increaseScrollSpeed() {
-        scrollSpeed += 1;
-        // Cap the speed at a reasonable maximum
-        if (scrollSpeed > 10) {
-            scrollSpeed = 10;
-        }
+        scrollSpeed = Math.min(scrollSpeed + 1, 10);
+    }
+
+    public void updateViewportDimensions(final int newWidth, final int newHeight) {
+        this.viewportWidth = newWidth;
+        this.viewportHeight = newHeight;
+        
+        // Ricrea il chunkFactory con nuova dimensione celle
+        int cellSize = newWidth / 100;
+        this.chunkFactory = new ChunkFactoryImpl(cellSize);
     }
     
     public boolean isPositionOutOfBounds(final int x, final int y) {
