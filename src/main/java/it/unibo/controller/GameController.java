@@ -4,6 +4,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import it.unibo.controller.Map.api.MapController;
 import it.unibo.model.Map.api.GameMap;
 import model.player.Player;
 import view.GameView;
@@ -30,6 +31,7 @@ public class GameController {
     private boolean gameRunning;
     private boolean gamePaused;
     private long gameStartTime;
+    private MovingObstacleController movingObstacleController; //GIULY
     
     /**
      * Costruttore per GameController.
@@ -58,6 +60,8 @@ public class GameController {
         // Configurazione degli input
         InputHandler inputHandler = new InputHandler(this, playerController);
         gameView.setKeyListener(inputHandler);
+
+        this.movingObstacleController = new MovingObstacleController(gameMap); //GIULY
     }
     
     /**
@@ -111,6 +115,8 @@ public class GameController {
     private void gameLoopUpdate() {
         try {
             if (gameRunning && !gamePaused) {
+                movingObstacleController.update(); //GIULY
+
                 // Aggiorna la mappa
                 mapController.update();
                 
@@ -121,7 +127,7 @@ public class GameController {
                 scoreController.updateScore();
                 
                 // Gestisce collisioni e oggetti collezionabili
-                if (collisionController.checkCollisions()) {
+                if (collisionController.checkCollisions() || movingObstacleController.checkCollision(player.getX(), player.getY())) { //GIULY
                     playerController.die();
                     endGame();
                     return;
@@ -163,6 +169,7 @@ public class GameController {
             // Aumenta la velocità solo se non è già stata aumentata in questo secondo
             if (currentTime - gameStartTime - (gameTimeSeconds * 1000) < gameLoopManager.getFrameTime()) {
                 gameMap.increaseScrollSpeed();
+                movingObstacleController.increaseDifficulty(1); //GIULY
             }
         }
     }

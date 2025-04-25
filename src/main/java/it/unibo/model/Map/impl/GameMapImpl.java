@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import it.unibo.model.Map.Obstacles.api.MovingObstacleManager;
+import it.unibo.model.Map.Obstacles.impl.MovingObstacleManagerImpl;
+import it.unibo.model.Map.Obstacles.impl.MovingObstacles;
 import it.unibo.model.Map.api.Chunk;
 import it.unibo.model.Map.api.ChunkFactory;
 import it.unibo.model.Map.api.GameMap;
+import it.unibo.model.Map.api.GameObject;
 
 public class GameMapImpl implements GameMap {
 
@@ -16,6 +20,7 @@ public class GameMapImpl implements GameMap {
     private ChunkFactory chunkFactory;
     private int currentPosition;
     private int scrollSpeed;
+    private final MovingObstacleManager obstacleManager;
     
     // Number of chunks to keep ahead of the current view
     private static final int BUFFER_CHUNKS = 5;
@@ -34,6 +39,7 @@ public class GameMapImpl implements GameMap {
         this.currentPosition = 0;
         this.chunks = new ArrayList<>();
         this.chunkFactory = new ChunkFactoryImpl(viewportWidth / 8); // esempio 8 celle
+        this.obstacleManager = new MovingObstacleManagerImpl();
         
         // Initialize the map with starting chunks
         this.initializeMap();
@@ -52,14 +58,24 @@ public class GameMapImpl implements GameMap {
         }
     }
     
+    @Override
     public void update() {
-        // Increment the current position by the scroll speed
+        // Aggiorna la posizione corrente
         currentPosition -= scrollSpeed;
         
-        // Remove chunks that are no longer visible and far behind
+        // Aggiorna tutti gli ostacoli in movimento
+        obstacleManager.updateAll(viewportWidth);
+         
+        // Pulizia ostacoli fuori dallo schermo
+        obstacleManager.cleanupOffscreenObstacles(
+            currentPosition - 200, // Un po' sotto la vista corrente
+            currentPosition + viewportHeight + 200 // Un po' sopra la vista corrente
+        );
+         
+        // Rimuovi chunk non più visibili
         cleanupChunks();
-        
-        // Generate new chunks as needed
+         
+        // Genera nuovi chunk se necessario
         ensureBufferChunks();
     }
     
@@ -95,6 +111,7 @@ public class GameMapImpl implements GameMap {
             .orElse(0);
     }
     
+    @Override
     public void generateNewChunk() {
         int nextPosition = getFarthestChunkPosition();
         if (nextPosition == Integer.MAX_VALUE) {
@@ -105,20 +122,37 @@ public class GameMapImpl implements GameMap {
         
         Chunk newChunk = chunkFactory.createRandomChunk(nextPosition, viewportWidth);
         chunks.add(newChunk);
+        
+        // Aggiungi gli ostacoli mobili del nuovo chunk al manager
+        for (GameObject obj : newChunk.getObjects()) {
+            if (obj instanceof MovingObstacles) {
+                obstacleManager.addObstacle((MovingObstacles) obj);
+            }
+        }
+    }
+
+    // Metodo per verificare le collisioni con il player
+    public boolean checkPlayerCollision(int playerX, int playerY) {
+        return obstacleManager.checkCollision(playerX, playerY);
     }
     
+    @Override
     public List<Chunk> getVisibleChunks() {
         return chunks.stream()
             .filter(chunk -> chunk.isVisible(currentPosition, viewportHeight))
             .collect(Collectors.toList());
     }
     
+    @Override
     public int getCurrentPosition() {
         return currentPosition;
     }
     
+    @Override
     public void increaseScrollSpeed() {
         scrollSpeed = Math.min(scrollSpeed + 1, 10);
+        // Aumenta anche la velocità degli ostacoli
+        obstacleManager.increaseSpeed(1);
     }
 
     public void updateViewportDimensions(final int newWidth, final int newHeight) {
@@ -129,19 +163,28 @@ public class GameMapImpl implements GameMap {
         int cellSize = newWidth / 100;
         this.chunkFactory = new ChunkFactoryImpl(cellSize);
     }
+
+    // Getters per l'obstacle manager
+    public MovingObstacleManager getObstacleManager() {
+        return obstacleManager;
+    }
     
+    @Override
     public boolean isPositionOutOfBounds(final int x, final int y) {
         return x < 0 || x >= viewportWidth || y < currentPosition || y >= currentPosition + viewportHeight;
     }
     
+    @Override
     public List<Chunk> getAllChunks() {
         return chunks;
     }
     
+    @Override
     public int getViewportWidth() {
         return viewportWidth;
     }
     
+    @Override
     public int getViewportHeight() {
         return viewportHeight;
     }

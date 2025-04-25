@@ -23,6 +23,7 @@ public class ObstacleImpl extends GameObjectImpl implements Obstacle {
         setMovable(movable);
     }
     
+    @Override
     public ObstacleType getType() {
         return this.type;
     }

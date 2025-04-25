@@ -7,7 +7,6 @@ import it.unibo.model.Map.api.Chunk;
 import it.unibo.model.Map.api.Collectible;
 import it.unibo.model.Map.api.GameMap;
 import it.unibo.model.Map.api.Obstacle;
-import it.unibo.model.Map.impl.GameMapImpl;
 import it.unibo.model.Map.util.CollectibleType;
 import it.unibo.model.Map.util.ObstacleType;
 import it.unibo.view.Map.api.MapView;
@@ -29,14 +28,14 @@ public class MapControllerImpl implements MapController {
         this.view = view;
         
         // Initialize the view with current model data
-        if (view instanceof MapViewImpl) {
-            MapViewImpl viewImpl = (MapViewImpl) view;
+        if (view instanceof MapViewImpl viewImpl) {
             viewImpl.setViewportWidth(model.getViewportWidth());
             viewImpl.setCurrentPosition(model.getCurrentPosition());
             viewImpl.setVisibleChunks(model.getVisibleChunks());
         }
     }
     
+    @Override
     public void update() {
         // Update the model
         model.update();
@@ -45,8 +44,7 @@ public class MapControllerImpl implements MapController {
         updateGameObjects();
         
         // Update the view with new data from the model
-        if (view instanceof MapViewImpl) {
-            MapViewImpl viewImpl = (MapViewImpl) view;
+        if (view instanceof MapViewImpl viewImpl) {
             viewImpl.setCurrentPosition(model.getCurrentPosition());
             viewImpl.setVisibleChunks(model.getVisibleChunks());
         }
@@ -69,6 +67,7 @@ public class MapControllerImpl implements MapController {
         }
     }
     
+    @Override
     public boolean isCollision(int screenX, int screenY) {
         List<Chunk> chunks = model.getVisibleChunks();
         for (Chunk chunk : chunks) {
@@ -105,6 +104,7 @@ public class MapControllerImpl implements MapController {
         return false;
     }
     
+    @Override
     public CollectibleType tryCollectItem(int x, int y) {
         List<Chunk> chunks = model.getVisibleChunks();
         for (Chunk chunk : chunks) {
@@ -121,6 +121,7 @@ public class MapControllerImpl implements MapController {
         return null;
     }
     
+    @Override
     public void placeCollectible(Collectible item) {
         // Find a suitable chunk to place the collectible
         List<Chunk> visibleChunks = model.getVisibleChunks();
@@ -131,10 +132,12 @@ public class MapControllerImpl implements MapController {
         }
     }
     
+    @Override
     public boolean isPositionOutOfBounds(int x, int y) {
         return model.isPositionOutOfBounds(x, y);
     }
     
+    @Override
     public int getCurrentPosition() {
         return model.getCurrentPosition();
     }
@@ -146,14 +149,8 @@ public class MapControllerImpl implements MapController {
      * @param height The new height of the window
      */
     public void updateViewDimensions(int width, int height) {
-        // Aggiorna il modello
-        if (model instanceof GameMapImpl) {
-            ((GameMapImpl) model).updateViewportDimensions(width, height);
-        }
-    
-        // Aggiorna la vista
-        if (view instanceof MapViewImpl) {
-            ((MapViewImpl) view).updateDimensions(width, height);
+        if (view instanceof MapViewImpl mapViewImpl) {
+            mapViewImpl.updateDimensions(width, height);
         }
     }
 }
