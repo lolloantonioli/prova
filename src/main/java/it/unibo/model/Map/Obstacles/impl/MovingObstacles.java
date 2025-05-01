@@ -182,4 +182,10 @@ public class MovingObstacles implements Obstacle{
         return baseLevel + Math.abs(speed) / 2;
     }
 
+    @Override
+    public void setPosition(int newX, int newY) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setPosition'");
+    }
+
 }

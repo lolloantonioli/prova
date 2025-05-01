@@ -6,9 +6,9 @@ import java.util.concurrent.TimeUnit;
 
 import it.unibo.controller.Map.api.MapController;
 import it.unibo.model.Map.api.GameMap;
-import model.player.Player;
-import view.GameView;
-import view.MapView;
+import it.unibo.model.player.Player;
+import it.unibo.view.GameView;
+import it.unibo.view.Map.MapView;
 
 /**
  * Controller principale che gestisce il ciclo di gioco e coordina

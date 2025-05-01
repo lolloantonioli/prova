@@ -1,6 +1,7 @@
 package it.unibo.view;
 
 import java.awt.Dimension;
+import java.awt.Font;
 
 public class ScaleManager {
     private int baseWidth;
@@ -85,6 +86,21 @@ public class ScaleManager {
      */
     public int unscaleY(int screenY) {
         return Math.round(screenY / scaleY);
+    }
+    
+    /**
+     * Scales a font according to the current scale factors.
+     * 
+     * @param font The original font to scale
+     * @return A new font with size adjusted according to scale
+     */
+    public Font scaleFont(Font font) {
+        // Use the average of scaleX and scaleY for fonts to maintain proportions
+        float scaleFactor = (scaleX + scaleY) / 2.0f;
+        int newSize = Math.round(font.getSize() * scaleFactor);
+        
+        // Create a new font with the scaled size
+        return new Font(font.getName(), font.getStyle(), newSize);
     }
     
     public float getScaleX() {
