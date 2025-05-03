@@ -1,13 +1,8 @@
 package it.unibo.controller;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import it.unibo.controller.Map.api.MapController;
 import it.unibo.controller.Map.impl.MapControllerImpl;
 import it.unibo.model.Map.api.GameMap;
-//import it.unibo.model.player.api.Player;
 import it.unibo.view.GameView;
 import it.unibo.view.Map.api.MapView;
 
@@ -27,13 +22,17 @@ public class GameController {
     //rivate final ScoreController scoreController;
     private final GameView gameView;
     private final GameStateManager gameStateManager;
+    private final MovingObstacleController movingObstacleController;
     
     // Gestione del game loop
     //private final GameLoopManager gameLoopManager;
     private boolean gameRunning;
     private boolean gamePaused;
     private long gameStartTime;
-    private final MovingObstacleController movingObstacleController;
+
+     // Configurazione della difficoltà
+     private static final long DIFFICULTY_INCREASE_INTERVAL = 30000; // 30 secondi
+     private long lastDifficultyIncrease;
     
     /**
      * Costruttore per GameController.
@@ -56,6 +55,9 @@ public class GameController {
         //this.collisionController = new CollisionController(mapController, player);
         //this.scoreController = new ScoreController(player, gameView);
         //this.gameLoopManager = new GameLoopManager(this::gameLoopUpdate);
+
+        // Controller degli ostacoli mobili
+        this.movingObstacleController = new MovingObstacleController(gameMap);
         
         // Stato iniziale del gioco
         this.gameRunning = false;
@@ -64,8 +66,6 @@ public class GameController {
         // Configurazione degli input
         //InputHandler inputHandler = new InputHandler(this, playerController);
         //gameView.setKeyListener(inputHandler);
-
-        this.movingObstacleController = new MovingObstacleController(gameMap);
     }
     
     /**
@@ -77,12 +77,14 @@ public class GameController {
             gamePaused = false;
             //scoreController.resetScore();
             gameStartTime = System.currentTimeMillis();
+            lastDifficultyIncrease = gameStartTime;
             
             // Posiziona il giocatore nella posizione iniziale
            // player.setPosition(gameMap.getViewportWidth() / 2, gameMap.getCurrentPosition() + 50);
             
-            // Resetta gli ostacoli mobili
+            // Resetta e avvia la generazione degli ostacoli mobili
             movingObstacleController.resetObstacles();
+            movingObstacleController.startObstacleGeneration();
             
             // Avvia il game loop
            // gameLoopManager.startGameLoop();
@@ -100,6 +102,15 @@ public class GameController {
      */
     public void togglePause() {
         gamePaused = !gamePaused;
+
+        if (gamePaused) {
+            // Quando in pausa, sospendi la generazione di ostacoli
+            movingObstacleController.pauseObstacleGeneration();
+        } else {
+            // Quando riprendi, riavvia la generazione di ostacoli
+            movingObstacleController.resumeObstacleGeneration();
+        }
+        
         gameView.setPauseState(gamePaused);
     }
     
@@ -110,6 +121,9 @@ public class GameController {
         if (gameRunning) {
             gameRunning = false;
            // gameLoopManager.stopGameLoop();
+
+            // Ferma la generazione di ostacoli e rilascia le risorse
+            movingObstacleController.dispose();
             
             // Aggiorna il punteggio massimo se necessario
            // scoreController.updateHighScore();
@@ -167,7 +181,6 @@ public class GameController {
         } catch (Exception e) {
             // Cattura eventuali eccezioni per evitare che il game loop si interrompa
             System.err.println("Errore nel game loop: " + e.getMessage());
-            e.printStackTrace();
         }
     }
     
@@ -175,17 +188,23 @@ public class GameController {
      * Aggiorna la difficoltà del gioco con il passare del tempo.
      */
     private void updateDifficulty() {
-        // Calcola il tempo di gioco in secondi
-        long currentTime = System.currentTimeMillis();
-        long gameTimeSeconds = (currentTime - gameStartTime) / 1000;
+         // Calcola il tempo di gioco in millisecondi
+         long currentTime = System.currentTimeMillis();
         
-        // Aumenta la velocità di scorrimento ogni 30 secondi
-        if (gameTimeSeconds > 0 && gameTimeSeconds % 30 == 0) {
-            // Aumenta la velocità solo se non è già stata aumentata in questo secondo
-    /*        if (currentTime - gameStartTime - (gameTimeSeconds * 1000) < gameLoopManager.getFrameTime()) {
-                gameMap.increaseScrollSpeed();
-                movingObstacleController.increaseDifficulty(1);
-            } */
+         // Aumenta la difficoltà ogni DIFFICULTY_INCREASE_INTERVAL millisecondi
+         if (currentTime - lastDifficultyIncrease >= DIFFICULTY_INCREASE_INTERVAL) {
+             // Aumenta la velocità di scorrimento della mappa
+             gameMap.increaseScrollSpeed();
+             
+             // Aumenta la difficoltà degli ostacoli mobili
+             movingObstacleController.increaseDifficulty(1);
+             
+             // Aggiorna il timestamp dell'ultimo aumento di difficoltà
+             lastDifficultyIncrease = currentTime;
+             
+             // Opzionale: Notifica al giocatore l'aumento di difficoltà
+             //gameView.showDifficultyIncrease(movingObstacleController.getCurrentDifficultyLevel());
+         
         }
     }
     
@@ -227,5 +246,14 @@ public class GameController {
         if (mapController instanceof MapControllerImpl mapControllerImpl) {
             mapControllerImpl.updateViewDimensions(width, height);
         }
+    }
+
+    /**
+     * Ottiene il controller degli ostacoli mobili.
+     * 
+     * @return Il controller degli ostacoli mobili
+     */
+    public MovingObstacleController getMovingObstacleController() {
+        return movingObstacleController;
     }
 }
