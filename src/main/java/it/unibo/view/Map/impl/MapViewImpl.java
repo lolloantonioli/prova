@@ -14,13 +14,15 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
+import it.unibo.controller.MovingObstacleController;
 import it.unibo.model.Map.api.Chunk;
 import it.unibo.model.Map.api.Collectible;
 import it.unibo.model.Map.api.GameObject;
 import it.unibo.model.Map.util.ChunkType;
 import it.unibo.model.Map.util.CollectibleType;
-import it.unibo.view.ScaleManager;
 import it.unibo.view.Map.api.MapView;
+import it.unibo.view.Obstacles.MovingObstacleViewManager;
+import it.unibo.view.ScaleManager;
 
 /**
  * View class responsible for rendering the map and collectible objects using images.
@@ -30,6 +32,7 @@ public class MapViewImpl implements MapView {
     
     private static final Logger LOGGER = Logger.getLogger(MapViewImpl.class.getName());
     private ScaleManager scaleManager;
+    private MovingObstacleViewManager obstacleViewManager; //GIULY
     
     // Base dimensions for which the game was designed
     private static final int BASE_WIDTH = 800;
@@ -55,6 +58,9 @@ public class MapViewImpl implements MapView {
     public MapViewImpl() {
         this.scaleManager = new ScaleManager(BASE_WIDTH, BASE_HEIGHT);
         this.viewportWidth = BASE_WIDTH;
+
+        // Inizializza il manager degli ostacoli, GIULY
+        this.obstacleViewManager = new MovingObstacleViewManager(this.scaleManager);
         
         // Load image resources
         loadImageResources();
@@ -98,6 +104,7 @@ public class MapViewImpl implements MapView {
      */
     public void updateDimensions(int width, int height) {
         scaleManager.updateScale(width, height);
+        obstacleViewManager.updateScaleManager(scaleManager);
     }
     
     /**
@@ -152,6 +159,15 @@ public class MapViewImpl implements MapView {
         for (Chunk chunk : visibleChunks) {
             renderChunk(g2d, chunk, currentPosition);
         }
+
+         //Render moving obstacles, GIULY
+        obstacleViewManager.updateViewportOffset(currentPosition);
+        obstacleViewManager.render(g2d);
+    }
+
+    // Aggiungi un metodo per impostare il controller degli ostacoli, GIULY
+    public void setObstacleController(MovingObstacleController controller) {
+        this.obstacleViewManager.setObstacleController(controller);
     }
     
     /**
