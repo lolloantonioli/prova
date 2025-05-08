@@ -1,6 +1,10 @@
 package it.unibo.controller;
 
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import it.unibo.model.Map.Obstacles.api.MovingObstacleFactory;
 import it.unibo.model.Map.Obstacles.api.MovingObstacleManager;
@@ -12,16 +16,27 @@ import it.unibo.model.Map.util.ObstacleType;
 
 /**
  * Controller dedicato alla gestione degli ostacoli mobili.
- * Gestisce la creazione, posizionamento, e comportamento di tutti gli ostacoli mobili.
+ * Gestisce la creazione, posizionamento, comportamento e spawn automatico di tutti gli ostacoli mobili.
  */
 public class MovingObstacleController {
     
     private final GameMap gameMap;
     private final MovingObstacleFactory obstacleFactory;
     private final MovingObstacleManager obstacleManager;
+    private final Random random;
     
+    // Parametri di configurazione
     private static final int MIN_DISTANCE_CARS = 100;
     private static final int MIN_DISTANCE_TRAINS = 300;
+    private static final int CAR_SPAWN_INTERVAL_MS = 5000; // 5 secondi
+    private static final int TRAIN_SPAWN_INTERVAL_MS = 15000; // 15 secondi
+    
+    // Generazione automatica di ostacoli
+    private ScheduledExecutorService obstacleSpawner;
+    
+    // Difficoltà
+    private int currentDifficultyLevel = 1;
+    private int obstacleSpawnRate = 1;
     
     /**
      * Costruttore per MovingObstacleController.
@@ -31,6 +46,7 @@ public class MovingObstacleController {
     public MovingObstacleController(GameMap gameMap) {
         this.gameMap = gameMap;
         this.obstacleFactory = new MovingObstacleFactoryImpl();
+        this.random = new Random();
         
         // Recupera il manager esistente dalla mappa per evitare duplicazioni
         if (gameMap instanceof it.unibo.model.Map.impl.GameMapImpl gameMapImpl) {
@@ -39,6 +55,123 @@ public class MovingObstacleController {
             // Crea un nuovo manager se necessario
             this.obstacleManager = new MovingObstacleManagerImpl();
         }
+    }
+    
+    /**
+     * Inizializza e avvia la generazione automatica di ostacoli.
+     * Da chiamare quando il gioco inizia.
+     */
+    public void startObstacleGeneration() {
+        if (obstacleSpawner != null && !obstacleSpawner.isShutdown()) {
+            obstacleSpawner.shutdown();
+        }
+        
+        obstacleSpawner = Executors.newScheduledThreadPool(2);
+        
+        // Pianifica la generazione periodica di auto
+        obstacleSpawner.scheduleAtFixedRate(
+            this::spawnRandomCars,
+            2000, // Ritardo iniziale
+            CAR_SPAWN_INTERVAL_MS / obstacleSpawnRate,
+            TimeUnit.MILLISECONDS
+        );
+        
+        // Pianifica la generazione periodica di treni
+        obstacleSpawner.scheduleAtFixedRate(
+            this::spawnRandomTrains,
+            5000, // Ritardo iniziale
+            TRAIN_SPAWN_INTERVAL_MS / obstacleSpawnRate, 
+            TimeUnit.MILLISECONDS
+        );
+    }
+    
+    /**
+     * Ferma la generazione automatica di ostacoli.
+     * Da chiamare quando il gioco viene messo in pausa o terminato.
+     */
+    public void stopObstacleGeneration() {
+        if (obstacleSpawner != null && !obstacleSpawner.isShutdown()) {
+            obstacleSpawner.shutdown();
+            try {
+                obstacleSpawner.awaitTermination(500, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+    
+    /**
+     * Genera auto casuali sulla mappa.
+     * Chiamato automaticamente dall'obstacleSpawner.
+     */
+    private void spawnRandomCars() {
+        // Trova le posizioni Y delle strade nella mappa visibile
+        List<Integer> roadPositions = findRoadPositions();
+        
+        if (!roadPositions.isEmpty()) {
+            // Scegli una strada casuale
+            int roadY = roadPositions.get(random.nextInt(roadPositions.size()));
+            
+            // Il numero di auto dipende dal livello di difficoltà
+            int carCount = Math.min(1 + currentDifficultyLevel / 2, 3);
+            boolean leftToRight = random.nextBoolean();
+            
+            // Crea le auto
+            createCarSet(roadY, carCount, leftToRight);
+        }
+    }
+    
+    /**
+     * Genera treni casuali sulla mappa.
+     * Chiamato automaticamente dall'obstacleSpawner.
+     */
+    private void spawnRandomTrains() {
+        // Trova le posizioni Y delle ferrovie nella mappa visibile
+        List<Integer> railwayPositions = findRailwayPositions();
+        
+        if (!railwayPositions.isEmpty()) {
+            // Scegli una ferrovia casuale
+            int railwayY = railwayPositions.get(random.nextInt(railwayPositions.size()));
+            
+            // I treni sono più pericolosi, quindi ne generiamo meno
+            int trainCount = Math.min(1 + currentDifficultyLevel / 3, 2);
+            boolean leftToRight = random.nextBoolean();
+            
+            // Crea i treni
+            createTrainSet(railwayY, trainCount, leftToRight);
+        }
+    }
+    
+    /**
+     * Trova le posizioni Y delle strade nella mappa visibile.
+     * 
+     * @return Lista di coordinate Y delle strade
+     */
+    private List<Integer> findRoadPositions() {
+        // Implementazione semplificata - in un'implementazione reale, 
+        // bisognerebbe analizzare i chunk della mappa per trovare le strade
+        
+        // Assumiamo alcune posizioni predefinite per esempio
+        return List.of(
+            gameMap.getCurrentPosition() + 200,
+            gameMap.getCurrentPosition() + 400,
+            gameMap.getCurrentPosition() + 600
+        );
+    }
+    
+    /**
+     * Trova le posizioni Y delle ferrovie nella mappa visibile.
+     * 
+     * @return Lista di coordinate Y delle ferrovie
+     */
+    private List<Integer> findRailwayPositions() {
+        // Implementazione semplificata
+        
+        // Assumiamo alcune posizioni predefinite per esempio
+        return List.of(
+            gameMap.getCurrentPosition() + 300,
+            gameMap.getCurrentPosition() + 500
+        );
     }
     
     /**
@@ -128,12 +261,25 @@ public class MovingObstacleController {
     }
     
     /**
-     * Aumenta la difficoltà incrementando la velocità degli ostacoli.
+     * Aumenta la difficoltà incrementando la velocità degli ostacoli e
+     * la frequenza di generazione.
      * 
-     * @param factor Fattore di incremento della velocità
+     * @param factor Fattore di incremento della difficoltà
      */
     public void increaseDifficulty(int factor) {
+        currentDifficultyLevel += factor;
+        
+        // Aumenta la velocità degli ostacoli esistenti
         obstacleManager.increaseSpeed(factor);
+        
+        // Aumenta la frequenza di spawn
+        obstacleSpawnRate = Math.min(obstacleSpawnRate + 1, 5);
+        
+        // Riavvia la generazione di ostacoli con la nuova frequenza
+        if (obstacleSpawner != null && !obstacleSpawner.isShutdown()) {
+            stopObstacleGeneration();
+            startObstacleGeneration();
+        }
     }
     
     /**
@@ -167,11 +313,38 @@ public class MovingObstacleController {
     }
     
     /**
-     * Reimposta tutti gli ostacoli alla posizione iniziale.
+     * Reimposta tutti gli ostacoli e riavvia la generazione.
      * Utile quando il gioco viene riavviato.
      */
     public void resetObstacles() {
+        // Ferma la generazione automatica
+        stopObstacleGeneration();
+        
+        // Reimposta gli ostacoli esistenti
         obstacleManager.resetAll();
+        
+        // Reimposta la difficoltà
+        currentDifficultyLevel = 1;
+        obstacleSpawnRate = 1;
+        
+        // Riavvia la generazione automatica
+        startObstacleGeneration();
+    }
+    
+    /**
+     * Sospende temporaneamente la generazione di ostacoli.
+     * Utile quando il gioco viene messo in pausa.
+     */
+    public void pauseObstacleGeneration() {
+        stopObstacleGeneration();
+    }
+    
+    /**
+     * Riprende la generazione di ostacoli.
+     * Utile quando il gioco viene ripreso dopo una pausa.
+     */
+    public void resumeObstacleGeneration() {
+        startObstacleGeneration();
     }
     
     /**
@@ -196,5 +369,22 @@ public class MovingObstacleController {
         }
         
         return obstacle;
+    }
+    
+    /**
+     * Ottiene il livello di difficoltà corrente.
+     * 
+     * @return Il livello di difficoltà
+     */
+    public int getCurrentDifficultyLevel() {
+        return currentDifficultyLevel;
+    }
+    
+    /**
+     * Rilascia le risorse utilizzate dal controller.
+     * Da chiamare quando il gioco viene terminato.
+     */
+    public void dispose() {
+        stopObstacleGeneration();
     }
 }

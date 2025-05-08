@@ -1,11 +1,27 @@
 package it.unibo.view;
 
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
 
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
+import it.unibo.controller.MovingObstacleController;
 import it.unibo.view.Map.api.MapView;
 import it.unibo.view.Map.impl.MapViewImpl;
-
-import java.awt.*;
 
 public class GameView extends JFrame {
     private JPanel mainPanel;
@@ -170,6 +186,12 @@ public class GameView extends JFrame {
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         return button;
+    }
+
+    public void setMovingObstacleController(MovingObstacleController controller) {
+        if (mapView instanceof MapViewImpl mapViewImpl) {
+            mapViewImpl.setObstacleController(controller);
+        }
     }
     
     // Public methods for game state management
