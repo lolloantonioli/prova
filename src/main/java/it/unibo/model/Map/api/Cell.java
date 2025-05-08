@@ -1,5 +1,7 @@
 package it.unibo.model.Map.api;
 
+import java.util.Optional;
+
 public interface Cell {
 
     /**
@@ -27,7 +29,7 @@ public interface Cell {
      * 
      * @return L'oggetto contenuto nella cella, o null se la cella è vuota
      */
-    public GameObject getContent();
+    public Optional<GameObject> getContent();
     
     public int getX();
     

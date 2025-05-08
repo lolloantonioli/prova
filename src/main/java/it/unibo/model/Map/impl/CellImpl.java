@@ -1,11 +1,13 @@
 package it.unibo.model.Map.impl;
 
+import java.util.Optional;
+
 import it.unibo.model.Map.api.Cell;
 import it.unibo.model.Map.api.GameObject;
 
 public class CellImpl implements Cell {
     
-    private GameObject content;
+    private Optional<GameObject> content;
     private final int x;  // posizione x nella griglia
     private final int y;  // posizione y nella griglia
     private final int size; // dimensione del quadrato
@@ -21,12 +23,12 @@ public class CellImpl implements Cell {
         this.x = x;
         this.y = y;
         this.size = size;
-        this.content = null;
+        this.content = Optional.empty();
     }
     
     public boolean addObject(final GameObject obj) {
-        if (content == null) {
-            content = obj;
+        if (!content.isPresent()) {
+            content = Optional.of(obj);
             // Aggiorniamo la posizione dell'oggetto per allinearla alla cella
             obj.setPosition(x * size, y * size);
             return true;
@@ -35,14 +37,14 @@ public class CellImpl implements Cell {
     }
     
     public void removeObject() {
-        content = null;
+        content = Optional.empty();
     }
     
     public boolean hasObject() {
-        return content != null;
+        return content.isPresent();
     }
     
-    public GameObject getContent() {
+    public Optional<GameObject> getContent() {
         return content;
     }
     

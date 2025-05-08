@@ -77,8 +77,11 @@ public class PathValidatorImpl implements PathValidator {
                 
                 // Se la cella contiene un ostacolo, non è navigabile
                 Cell cell = cells.get(i);
-                if (cell.hasObject() && cell.getContent() != null && 
-                    !cell.getContent().isPlatform()) {
+                boolean isNotNavigable = cell.getContent()
+                    .map(content -> !content.isPlatform())
+                    .orElse(false);
+                
+                if (isNotNavigable) {
                     continue;
                 }
                 
@@ -107,8 +110,11 @@ public class PathValidatorImpl implements PathValidator {
                 Cell adjacentCell = cells.get(index);
                 
                 // Se la cella adiacente contiene un ostacolo, non è navigabile
-                if (adjacentCell.hasObject() && adjacentCell.getContent() != null && 
-                    !adjacentCell.getContent().isPlatform()) {
+                boolean isNotNavigable = adjacentCell.getContent()
+                    .map(content -> !content.isPlatform())
+                    .orElse(false);
+                
+                if (isNotNavigable) {
                     return;
                 }
                 
@@ -225,7 +231,11 @@ public class PathValidatorImpl implements PathValidator {
         for (int i = 0; i < chunk.getCells().size(); i++) {
             int col = i % cellsPerRow;
             Cell cell = chunk.getCells().get(i);
-            if (cell.hasObject() && cell.getContent() != null && !cell.getContent().isPlatform()) {
+            boolean isObstacle = cell.getContent()
+                .map(content -> !content.isPlatform())
+                .orElse(false);
+                
+            if (isObstacle) {
                 obstacleCount.merge(col, 1, Integer::sum);
             }
         }
@@ -260,8 +270,13 @@ public class PathValidatorImpl implements PathValidator {
      * @param chunk Il chunk di fiume da modificare
      */
     private void ensureRiverTraversability(Chunk chunk) {
+        // Rimuovi tutte le piattaforme esistenti
         chunk.getCells().forEach(cell -> {
-            if (cell.hasObject() && cell.getContent().isPlatform()) {
+            boolean isPlatform = cell.getContent()
+                .map(GameObject::isPlatform)
+                .orElse(false);
+                
+            if (isPlatform) {
                 cell.removeObject();
             }
         });

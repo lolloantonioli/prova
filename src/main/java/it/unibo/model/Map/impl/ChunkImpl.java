@@ -1,6 +1,7 @@
 package it.unibo.model.Map.impl;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -64,6 +65,7 @@ public class ChunkImpl implements Chunk {
         return cells.stream()
             .filter(Cell::hasObject)
             .map(Cell::getContent)
+            .flatMap(Optional::stream)
             .collect(Collectors.toList());
     }
     
