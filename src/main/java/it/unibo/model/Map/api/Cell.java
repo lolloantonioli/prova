@@ -34,11 +34,5 @@ public interface Cell {
     public int getX();
     
     public int getY();
-    
-    public int getSize();
-    
-    public int getScreenX();
-    
-    public int getScreenY();
 
 }

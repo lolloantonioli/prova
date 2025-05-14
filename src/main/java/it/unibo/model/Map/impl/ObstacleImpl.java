@@ -17,7 +17,7 @@ public class ObstacleImpl extends GameObjectImpl implements Obstacle {
      * @param type Type of obstacle
      * @param movable Whether the obstacle can move
      */
-    public ObstacleImpl(int x, int y, int width, int height, ObstacleType type, boolean movable) {
+    public ObstacleImpl(final int x, final int y, final int width, final int height, final ObstacleType type, final boolean movable) {
         super(x, y, width, height);
         this.type = type;
         setMovable(movable);

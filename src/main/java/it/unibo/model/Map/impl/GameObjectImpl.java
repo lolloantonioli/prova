@@ -20,7 +20,7 @@ public class GameObjectImpl implements GameObject {
      * @param width Width
      * @param height Height
      */
-    public GameObjectImpl(int x, int y, int width, int height) {
+    public GameObjectImpl(final int x, final int y, final int width, final int height) {
         this.x = x;
         this.y = y;
         this.dimension = new Dimension(width, height);

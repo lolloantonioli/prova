@@ -2,6 +2,8 @@ package it.unibo.model.Map.api;
 
 import java.util.List;
 
+import it.unibo.model.Map.Obstacles.api.MovingObstacleManager;
+
 public interface GameMap {
 
     /**
@@ -13,6 +15,8 @@ public interface GameMap {
      * Generates a new chunk and adds it to the map.
      */
     void generateNewChunk();
+
+    boolean checkPlayerCollision(final int playerX, final int playerY);
 
     /**
      * Gets the list of currently visible chunks.
@@ -32,6 +36,8 @@ public interface GameMap {
      * Increases the scroll speed of the map.
      */
     void increaseScrollSpeed();
+
+    MovingObstacleManager getObstacleManager();
 
     /**
      * Checks if a position is out of bounds of the map.
@@ -54,13 +60,13 @@ public interface GameMap {
      * 
      * @return Viewport width
      */
-    int getViewportWidth();
+    int getMapWidth();
 
     /**
      * Gets the viewport height.
      * 
      * @return Viewport height
      */
-    int getViewportHeight();
+    int getMapHeight();
 
 }

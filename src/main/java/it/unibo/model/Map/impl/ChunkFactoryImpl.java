@@ -24,21 +24,18 @@ public class ChunkFactoryImpl implements ChunkFactory {
     private final Random random;
     private final PathValidator pathValidator;
     private final ObjectPlacer objectPlacer;
-    private final int cellSize;
+    private final MovingObstacleFactory obstacleFactory;
 
-    private static final int MIN_FREE_PATH_WIDTH = 80; // Larghezza minima del percorso libero
     private static final int MAX_OBSTACLES_PER_CHUNK = 5;
     private static final int MAX_COLLECTIBLES_PER_CHUNK = 3;
-    private final MovingObstacleFactory obstacleFactory;
     
     /**
      * Constructor for the ChunkFactory class.
      */
-    public ChunkFactoryImpl(final int cellSize) {
+    public ChunkFactoryImpl() {
         this.random = new Random();
-        this.pathValidator = new PathValidatorImpl(MIN_FREE_PATH_WIDTH);
+        this.pathValidator = new PathValidatorImpl();
         this.objectPlacer = new ObjectPlacerImpl();
-        this.cellSize = cellSize;
         this.obstacleFactory = new MovingObstacleFactoryImpl();
     }
     
@@ -53,14 +50,14 @@ public class ChunkFactoryImpl implements ChunkFactory {
         };
 
         // Assicura sempre un percorso libero
-        pathValidator.ensureTraversability(chunk, width);
+        pathValidator.ensureTraversability(chunk);
         
         return chunk;
     }        
         
     @Override
     public Chunk createRoadChunk(int position, int width) {
-        Chunk chunk = new ChunkImpl(position, width, ChunkType.ROAD, cellSize);
+        Chunk chunk = new ChunkImpl(position, width, ChunkType.ROAD);
         
         // Determina la direzione delle auto
         boolean leftToRight = random.nextBoolean();
@@ -90,7 +87,7 @@ public class ChunkFactoryImpl implements ChunkFactory {
     
     @Override
     public Chunk createRailwayChunk(int position, int width) {
-        Chunk chunk = new ChunkImpl(position, width, ChunkType.RAILWAY, cellSize);
+        Chunk chunk = new ChunkImpl(position, width, ChunkType.RAILWAY);
         
         // Determina la direzione dei treni
         boolean leftToRight = random.nextBoolean();
@@ -120,7 +117,7 @@ public class ChunkFactoryImpl implements ChunkFactory {
     
     @Override
     public Chunk createRiverChunk(int position, int width) {
-        Chunk chunk = new ChunkImpl(position, width, ChunkType.RIVER, cellSize);
+        Chunk chunk = new ChunkImpl(position, width, ChunkType.RIVER);
 
         // Genera tronchi come piattaforme
         List<GameObject> platforms = generateRiverPlatforms(width, position);
@@ -157,7 +154,7 @@ public class ChunkFactoryImpl implements ChunkFactory {
     }
 
     public Chunk createGrassChunk(final int position, final int width) {
-        Chunk chunk = new ChunkImpl(position, width, ChunkType.GRASS, cellSize);
+        Chunk chunk = new ChunkImpl(position, width, ChunkType.GRASS);
         
         // Genera alberi come ostacoli
         List<GameObject> grassObstacles = generateGrassObstacles(width, position);

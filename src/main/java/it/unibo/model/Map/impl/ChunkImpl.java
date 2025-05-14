@@ -9,45 +9,38 @@ import it.unibo.model.Map.api.Cell;
 import it.unibo.model.Map.api.Chunk;
 import it.unibo.model.Map.api.GameObject;
 import it.unibo.model.Map.util.ChunkType;
-import it.unibo.model.Map.util.Dimension;
 
 public class ChunkImpl implements Chunk {
 
     private final int position;
-    private final Dimension dimension;
     private final ChunkType type;
     private final List<Cell> cells;
-    private final int cellSize;
-    // Numero di celle per riga (chunk)
     private final int cellsPerRow;
-    // Standard height for chunks
-    public static final int STANDARD_HEIGHT = 120;
+
+    public static final int STANDARD_HEIGHT = 200;
     
     /**
      * Constructor for the Chunk class.
      * 
      * @param position Y-position of the chunk
-     * @param width Width of the chunk
+     * @param cellsPerRow Number of cells in this chunk row
      * @param type Type of the chunk
-     * @param cellSize Dimensione di ogni cella
      */
-    public ChunkImpl(final int position, final int width, final ChunkType type, final int cellSize) {
+    public ChunkImpl(final int position, final int cellsPerRow, final ChunkType type) {
         this.position = position;
-        this.dimension = new Dimension(width, STANDARD_HEIGHT);
+        this.cellsPerRow = cellsPerRow;
         this.type = type;
-        this.cellSize = cellSize;
-        this.cellsPerRow = width / cellSize;
-        
-        // Inizializziamo la riga di celle
         this.cells = IntStream.range(0, cellsPerRow)
-            .mapToObj(x -> new CellImpl(x, position / cellSize, cellSize))
+            .mapToObj(x -> new CellImpl(x, position))
             .collect(Collectors.toList());
     }
     
+    @Override
     public boolean addObjectAt(final GameObject obj, final int cellX) {
         return (cellX >= 0 && cellX < cellsPerRow) && cells.get(cellX).addObject(obj);
     }
     
+    @Override
     public boolean addObject(final GameObject obj) {
         return cells.stream()
             .filter(cell -> !cell.hasObject())
@@ -55,12 +48,8 @@ public class ChunkImpl implements Chunk {
             .map(cell -> cell.addObject(obj))
             .orElse(false);
     }
-
-    public boolean isVisible(final int viewPosition, final int viewHeight) {
-        // Check if any part of the chunk is within the visible range
-        return (position + dimension.height() > viewPosition) && (position < viewPosition + viewHeight);
-    }
     
+    @Override
     public List<GameObject> getObjects() {
         return cells.stream()
             .filter(Cell::hasObject)
@@ -69,35 +58,27 @@ public class ChunkImpl implements Chunk {
             .collect(Collectors.toList());
     }
     
+    @Override
     public List<Cell> getCells() {
         return cells;
     }
     
-    public Cell getCellAt(final int x, final int y) {
-        int cellX = x / cellSize;
+    @Override
+    public Cell getCellAt(final int cellX) {
         return (cellX >= 0 && cellX < cellsPerRow) ? cells.get(cellX) : null;
     }
     
+    @Override
     public ChunkType getType() {
         return type;
     }
     
+    @Override
     public int getPosition() {
         return position;
     }
     
-    public int getHeight() {
-        return dimension.height();
-    }
-    
-    public int getWidth() {
-        return dimension.width();
-    }
-    
-    public int getCellSize() {
-        return cellSize;
-    }
-    
+    @Override
     public int getCellsPerRow() {
         return cellsPerRow;
     }

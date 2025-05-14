@@ -22,15 +22,6 @@ public interface Chunk {
      * @return true se l'oggetto è stato aggiunto, false altrimenti
      */
     boolean addObject(final GameObject obj);
-    
-    /**
-     * Checks if the chunk is visible within the current viewport.
-     * 
-     * @param viewPosition Current view position
-     * @param viewHeight Height of the viewport
-     * @return True if the chunk is visible
-     */
-    boolean isVisible(final int viewPosition, final int viewHeight);
 
     /**
      * Gets the list of game objects in the chunk.
@@ -38,6 +29,21 @@ public interface Chunk {
      * @return List of game objects
      */
     List<GameObject> getObjects();
+    
+    /**
+     * Gets the list of cells in the chunk.
+     * 
+     * @return List of cells
+     */
+    List<Cell> getCells();
+    
+    /**
+     * Gets the cell at the specified X position.
+     * 
+     * @param cellX X position of the cell
+     * @return Cell at the specified position
+     */
+    Cell getCellAt(final int cellX);
 
     /**
      * Gets the type of the chunk.
@@ -52,27 +58,12 @@ public interface Chunk {
      * @return Position
      */
     int getPosition();
-
+    
     /**
-     * Gets the height of the chunk.
+     * Gets the number of cells in a row.
      * 
-     * @return Height
+     * @return Number of cells in a row
      */
-    int getHeight();
-
-    /**
-    * Gets the width of the chunk.
-    * 
-    * @return Width
-    */
-    int getWidth();
-
-    List<Cell> getCells();
-
-    Cell getCellAt(final int x, final int y);
-
-    int getCellSize();
-
     int getCellsPerRow();
 
 }

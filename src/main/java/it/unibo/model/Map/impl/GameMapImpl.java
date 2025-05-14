@@ -15,12 +15,12 @@ import it.unibo.model.Map.api.GameObject;
 public class GameMapImpl implements GameMap {
 
     private final List<Chunk> chunks;
-    private int viewportHeight;
-    private int viewportWidth;
     private ChunkFactory chunkFactory;
     private int currentPosition;
     private int scrollSpeed;
     private final MovingObstacleManager obstacleManager;
+    private final int mapWidth; // Larghezza logica della mappa (in celle)
+    private final int mapHeight; // Altezza logica della vista (in celle)
     
     // Number of chunks to keep ahead of the current view
     private static final int BUFFER_CHUNKS = 5;
@@ -33,12 +33,12 @@ public class GameMapImpl implements GameMap {
      * @param speed Initial scrolling speed
      */
     public GameMapImpl(final int width, final int height, final int speed) {
-        this.viewportWidth = width;
-        this.viewportHeight = height;
+        this.mapWidth = width;
+        this.mapHeight = height;
         this.scrollSpeed = speed;
         this.currentPosition = 0;
         this.chunks = new ArrayList<>();
-        this.chunkFactory = new ChunkFactoryImpl(viewportWidth / 8); // esempio 8 celle
+        this.chunkFactory = new ChunkFactoryImpl();
         this.obstacleManager = new MovingObstacleManagerImpl();
         
         // Initialize the map with starting chunks
@@ -50,7 +50,7 @@ public class GameMapImpl implements GameMap {
      */
     private void initializeMap() {
         // Add initial grass chunk (safe starting area)
-        chunks.add(chunkFactory.createGrassChunk(0, viewportWidth));
+        chunks.add(chunkFactory.createGrassChunk(0, mapWidth));
         
         // Add initial chunks to fill the buffer
         for (int i = 1; i <= BUFFER_CHUNKS; i++) {
@@ -61,15 +61,15 @@ public class GameMapImpl implements GameMap {
     @Override
     public void update() {
         // Aggiorna la posizione corrente
-        currentPosition -= scrollSpeed;
+        currentPosition += scrollSpeed;
         
         // Aggiorna tutti gli ostacoli in movimento
-        obstacleManager.updateAll(viewportWidth);
+        obstacleManager.updateAll(mapWidth);
          
         // Pulizia ostacoli fuori dallo schermo
         obstacleManager.cleanupOffscreenObstacles(
-            currentPosition - 200, // Un po' sotto la vista corrente
-            currentPosition + viewportHeight + 200 // Un po' sopra la vista corrente
+            currentPosition - 2, // Un po' sotto la vista corrente
+            currentPosition + mapHeight + 2 // Un po' sopra la vista corrente
         );
          
         // Rimuovi chunk non più visibili
@@ -83,7 +83,7 @@ public class GameMapImpl implements GameMap {
      * Removes chunks that are no longer visible and far behind.
      */
     private void cleanupChunks() {
-        chunks.removeIf(chunk -> chunk.getPosition() > currentPosition + viewportHeight);
+        chunks.removeIf(chunk -> chunk.getPosition() < currentPosition - mapHeight);
     }
     
     /**
@@ -91,9 +91,9 @@ public class GameMapImpl implements GameMap {
      */
     private void ensureBufferChunks() {
         int farthestPosition = getFarthestChunkPosition();
-        int targetPosition = currentPosition - (BUFFER_CHUNKS * ChunkImpl.STANDARD_HEIGHT);
+        int targetPosition = currentPosition + (BUFFER_CHUNKS * ChunkImpl.STANDARD_HEIGHT);
         
-        while (farthestPosition > targetPosition) {
+        while (farthestPosition < targetPosition) {
             generateNewChunk();
             farthestPosition = getFarthestChunkPosition();
         }
@@ -107,20 +107,20 @@ public class GameMapImpl implements GameMap {
     private int getFarthestChunkPosition() {
         return chunks.stream()
             .mapToInt(Chunk::getPosition)
-            .min()
+            .max()
             .orElse(0);
     }
     
     @Override
     public void generateNewChunk() {
         int nextPosition = getFarthestChunkPosition();
-        if (nextPosition == Integer.MAX_VALUE) {
+        if (nextPosition == Integer.MIN_VALUE) {
             nextPosition = 0; // First chunk after initial grass
         } else {
-            nextPosition -= ChunkImpl.STANDARD_HEIGHT;
+            nextPosition += ChunkImpl.STANDARD_HEIGHT;
         }
         
-        Chunk newChunk = chunkFactory.createRandomChunk(nextPosition, viewportWidth);
+        Chunk newChunk = chunkFactory.createRandomChunk(nextPosition, mapWidth);
         chunks.add(newChunk);
         
         // Aggiungi gli ostacoli mobili del nuovo chunk al manager
@@ -138,8 +138,14 @@ public class GameMapImpl implements GameMap {
     
     @Override
     public List<Chunk> getVisibleChunks() {
+        final int viewStart = currentPosition;
+        final int viewEnd = currentPosition + mapHeight;
+        
         return chunks.stream()
-            .filter(chunk -> chunk.isVisible(currentPosition, viewportHeight))
+            .filter(chunk -> {
+                int chunkPos = chunk.getPosition();
+                return chunkPos + ChunkImpl.STANDARD_HEIGHT > viewStart && chunkPos < viewEnd;
+            })
             .collect(Collectors.toList());
     }
     
@@ -155,15 +161,6 @@ public class GameMapImpl implements GameMap {
         obstacleManager.increaseSpeed(1);
     }
 
-    public void updateViewportDimensions(final int newWidth, final int newHeight) {
-        this.viewportWidth = newWidth;
-        this.viewportHeight = newHeight;
-        
-        // Ricrea il chunkFactory con nuova dimensione celle
-        int cellSize = newWidth / 100;
-        this.chunkFactory = new ChunkFactoryImpl(cellSize);
-    }
-
     // Getters per l'obstacle manager
     public MovingObstacleManager getObstacleManager() {
         return obstacleManager;
@@ -171,7 +168,7 @@ public class GameMapImpl implements GameMap {
     
     @Override
     public boolean isPositionOutOfBounds(final int x, final int y) {
-        return x < 0 || x >= viewportWidth || y < currentPosition || y >= currentPosition + viewportHeight;
+        return x < 0 || x >= mapWidth || y < currentPosition || y >= currentPosition + mapHeight;
     }
     
     @Override
@@ -180,13 +177,13 @@ public class GameMapImpl implements GameMap {
     }
     
     @Override
-    public int getViewportWidth() {
-        return viewportWidth;
+    public int getMapWidth() {
+        return mapWidth;
     }
     
     @Override
-    public int getViewportHeight() {
-        return viewportHeight;
+    public int getMapHeight() {
+        return mapHeight;
     }
 
 }
